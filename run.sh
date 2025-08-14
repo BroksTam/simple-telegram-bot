@@ -1,18 +1,16 @@
 #!/bin/bash
-# Simple installer and runner
-echo -n "Bot Token: "
-read TOKEN
-echo -n "Your ID: "
-read SUDO
-cat <<EOF > config.lua
+
+echo "🛠️ إعداد البوت..."
+read -p "ادخل التوكن: " token
+read -p "ادخل آيدي المطور: " owner
+
+cat > config.lua <<EOL
 return {
-  bot_token = "$TOKEN",
-  sudo_users = {$SUDO},
+    bot_token = "$token",
+    owner_id = "$owner"
 }
-EOF
+EOL
 
-echo "Installing dependencies..."
-apt update -y && apt install -y lua5.3 lua-socket lua-sec lua-dkjson
-
-echo "Starting bot..."
-lua5.3 bot.lua
+echo "✅ تم حفظ البيانات في config.lua"
+echo "🚀 تشغيل البوت..."
+lua bot.lua
