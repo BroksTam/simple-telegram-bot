@@ -1,16 +1,11 @@
-#!/bin/bash
+while true do
+    local ok, err = pcall(function()
+        dofile("bot.lua")
+    end)
 
-echo "🛠️ إعداد البوت..."
-read -p "ادخل التوكن: " token
-read -p "ادخل آيدي المطور: " owner
-
-cat > config.lua <<EOL
-return {
-    bot_token = "$token",
-    owner_id = "$owner"
-}
-EOL
-
-echo "✅ تم حفظ البيانات في config.lua"
-echo "🚀 تشغيل البوت..."
-lua bot.lua
+    if not ok then
+        print("\27[31m❌ خطأ في تشغيل البوت: " .. tostring(err) .. "\27[0m")
+        print("\27[33m⏳ إعادة التشغيل بعد 5 ثواني...\27[0m")
+        os.execute("sleep 5")
+    end
+end
