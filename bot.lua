@@ -1,47 +1,55 @@
 local https = require("ssl.https")
 local json = require("dkjson")
 
--- تحميل التوكن و ID المطور من ملف config.json
-local configFile = io.open("config.json", "r")
-if not configFile then
-    print("❌ ملف config.json غير موجود!")
+-- قراءة الإعدادات
+local config_file = io.open("config.json", "r")
+if not config_file then
+    print("❌ لم يتم العثور على config.json — شغل run.sh أولاً")
     os.exit()
 end
-local config = json.decode(configFile:read("*a"))
-configFile:close()
+local config_content = config_file:read("*a")
+config_file:close()
+local config = json.decode(config_content)
 
 local BOT_TOKEN = config.token
-local ADMIN_ID = tostring(config.admin_id)
+local SUDO_ID = tonumber(config.sudo_id)
+local PROXY = config.proxy ~= "" and config.proxy or nil
 
-local BASE_URL = "https://api.telegram.org/bot" .. BOT_TOKEN
-
--- دالة إرسال رسالة
-local function sendMessage(chat_id, text)
-    local url = BASE_URL .. "/sendMessage?chat_id=" .. chat_id .. "&text=" .. text
-    https.request(url)
+-- إعدادات الاتصال مع البروكسي
+local function make_request(url)
+    local request = require("socket.http")
+    if PROXY then
+        request.PROXY = PROXY
+    end
+    return request.request(url)
 end
 
-print("✅ البوت يعمل الآن ...")
-
+-- جلب تحديثات البوت
+local last_update_id = 0
 while true do
-    local updates, code = https.request(BASE_URL .. "/getUpdates?timeout=10")
-    if code == 200 and updates then
-        local data = json.decode(updates)
-        if data and data.result then
-            for _, update in ipairs(data.result) do
+    local url = string.format("https://api.telegram.org/bot%s/getUpdates?offset=%d", BOT_TOKEN, last_update_id + 1)
+    local res, code = https.request(url)
+    if code == 200 and res then
+        local updates = json.decode(res)
+        if updates and updates.result then
+            for _, update in ipairs(updates.result) do
+                last_update_id = update.update_id
                 if update.message and update.message.text then
+                    local chat_id = update.message.chat.id
                     local text = update.message.text
-                    local chat_id = tostring(update.message.chat.id)
 
                     if text == "/start" then
-                        sendMessage(chat_id, "👋 أهلاً بك! البوت يعمل بنجاح ✅")
-                    elseif chat_id == ADMIN_ID then
-                        sendMessage(chat_id, "📩 تم استلام رسالتك: " .. text)
+                        local send_url = string.format("https://api.telegram.org/bot%s/sendMessage?chat_id=%d&text=🚀 البوت شغال!", BOT_TOKEN, chat_id)
+                        https.request(send_url)
+                    elseif chat_id == SUDO_ID then
+                        local send_url = string.format("https://api.telegram.org/bot%s/sendMessage?chat_id=%d&text=📩 رسالتك: %s", BOT_TOKEN, chat_id, text)
+                        https.request(send_url)
                     end
                 end
             end
         end
     else
-        print("⚠️ مشكلة في الاتصال بتليجرام...")
+        print("⚠️ خطأ في الاتصال، إعادة المحاولة بعد 5 ثواني...")
+        os.execute("sleep 5")
     end
 end
