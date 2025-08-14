@@ -1,4 +1,4 @@
-return {
-    bot_token = "",
-    owner_id = ""
+{
+    "token": "ضع_التوكن_هنا",
+    "admin_id": "ضع_ايدي_المطور_هنا"
 }
