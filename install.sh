@@ -1,21 +1,33 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# سكربت تنصيب بوت تليجرام يعمل مع ملف bot.lua
 
-echo "🚀 بدء تنصيب المتطلبات..."
-
-# تحديث النظام
+# تثبيت المتطلبات
+echo "🔄 تثبيت المتطلبات..."
 sudo apt update -y
-sudo apt upgrade -y
+sudo apt install -y luarocks lua5.3 liblua5.3-dev unzip curl
 
-# تثبيت Lua 5.3 والمكتبات
-sudo apt install -y lua5.3 luarocks git
+# تثبيت المكتبات المطلوبة
+luarocks install luasocket
+luarocks install luasec
+luarocks install redis-lua
+luarocks install lua-cjson
+luarocks install serpent
 
-# تثبيت مكتبات Lua المطلوبة
-sudo luarocks install luasocket
-sudo luarocks install luasec
-sudo luarocks install dkjson
+# تحميل ملف البوت إذا ما كان موجود
+if [ ! -f bot.lua ]; then
+    echo "📥 تحميل bot.lua..."
+    curl -o bot.lua "رابط-ملف-bot.lua-على-السيرفر-مالتك"
+fi
 
-# إعطاء صلاحيات للتشغيل
-chmod +x run.sh
+# حفظ التوكن واسم المستخدم في متغيرات البيئة
+echo "🔑 حفظ بيانات التوكن..."
+read -p "ادخل التوكن: " token
+read -p "ادخل معرف البوت بدون @: " botuser
 
-echo "✅ تم التنصيب، الآن شغل البوت بـ:"
-echo "./run.sh"
+# نضيف المتغيرات في ملف .env
+echo "TOKEN=$token" > .env
+echo "BOT_USER=$botuser" >> .env
+
+# تشغيل البوت
+echo "🚀 تشغيل البوت..."
+lua5.3 bot.lua
